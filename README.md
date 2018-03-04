@@ -1,6 +1,10 @@
 # CMPM163-Homework3
 
-A. Shadertoy-Style scene<br/><br/>
+A. SDF Fonts<br/><br/>
+[SDF Fonts](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/sdf_test.html)
+![](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/Screenshot3.png)<br/><br/>
+
+B. Shadertoy-Style scene<br/><br/>
    
    - Including 4 objects in total with Phong lighting, no extra geometry included except for a full quad plane.<br/>
    — A sphere is morphing into a box and reversing back over time.<br/>
@@ -12,7 +16,7 @@ A. Shadertoy-Style scene<br/><br/>
 ![](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/Screenshot2.png)
  
    
-B. Final Project - Caustics<br/><br/>
+C. Final Project - Caustics<br/><br/>
 [Caustics](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/Homework3_Caustics.pdf)<br/>
 
 
