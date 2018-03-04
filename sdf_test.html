@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>sdf text</title>
+  <meta charset="utf-8">
+  <style>
+  body { margin: 0px; overflow: hidden; }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <script src="js/three.js"></script>
+  <script src="font/font.json"></script>
+  <script src="font/font_v.json"></script>
+  <script src="font/font_p.json"></script>
+  <script src="js/vertex_shader.js"></script>
+  <script src="js/frag_shader.js"></script>
+  <script src="js/OrbitControls.js"></script>
+  <script src="js/dat.gui.min.js"></script>
+  <script>
+    var container;
+    var camera, scene, renderer, controls;
+    var mesh1,mesh2,mesh3;
+    var material;
+
+    var frameCount = 0;
+
+    var default_sentence = "Coffee!";
+    var default_scale = 200; // window.innerWidth / 10.0;
+
+
+    var mouseX = 0.0;
+    var mouseY = 0.0;
+
+    init();
+    animate();
+
+    function init() {
+      container = document.getElementById('container');
+      camera = new THREE.PerspectiveCamera(80.0, window.innerWidth / window.innerHeight, 0.1, 50);
+      camera.position.z = 1;
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xD3D3D3);
+      controls = new THREE.OrbitControls( camera );
+      controls.update();
+
+      mesh1 = newMesh('font/font.png', font_map_c, 0.0, 0.0, default_scale, default_sentence);
+      mesh2 = newMesh('font/font_v.png',font_map_v, 0.0, 0.0, default_scale * 2.0, "Juice?");
+      mesh3 = newMesh('font/font_p.png', font_map_p, 0.0, 0.0,default_scale * 2.0, "Milk tea?");
+
+      mesh1.material.uniforms.animate.value = 0.5;
+      mesh2.material.uniforms.animate.value = 0.8;
+      mesh3.material.uniforms.animate.value = 0.2;
+
+      mesh1.translateX(-1.0);
+      mesh2.translateY(-0.5);
+      mesh2.translateX(0.5);
+      mesh3.translateY(0.4);
+      scene.add(mesh1);
+      scene.add(mesh2);
+      scene.add(mesh3);
+
+      renderer = new THREE.WebGLRenderer();
+      // renderer.setClearColor(0x000000, 0.5);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      container.appendChild(renderer.domElement);
+      //make it so that resizing the browser window also resizes the scene
+      window.addEventListener('resize', onWindowResize, false);
+      document.addEventListener('mousemove', onDocumentMouseMove, false);
+    }
+    function newMesh(font_path, font_map, start_x, start_y, scale, sentence)
+    {
+      // buffer geometry
+      var geometry = new THREE.BufferGeometry();
+      var font_texture = new THREE.TextureLoader().load(font_path);
+
+      var map = getTextMap(sentence, font_map, start_x, start_y,
+        [scale / 1.5, scale, scale, scale, scale, scale, scale, scale, scale, scale, scale, scale]); // window.innerWidth, window.innerHeight);
+      var vertices = new Float32Array(map[0]);
+      var texCoords = new Float32Array(map[1]);
+
+      // itemSize = 3 because there are 3 values (components) per vertex
+      geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geometry.addAttribute('texCoords', new THREE.BufferAttribute(texCoords, 2));
+      // materials (ie, linking to the shader program)
+      var uniforms = {
+        texture: {
+          type: "t",
+          value: font_texture
+        },
+        iGlobalTime: {
+          type: "f",
+          value: 0.0
+        },
+        animate: {
+          type: "f",
+          value: 0.0
+        }
+      };
+      material = new THREE.RawShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vs,
+        fragmentShader: fs,
+      });
+      material.side = THREE.DoubleSide;
+      material.transparent = true;
+		  material.opacity = 1;
+      material.alphaTest = 0.1;
+      mesh = new THREE.Mesh(geometry, material);
+      return mesh;
+    }
+
+    function getTextMap(text, font_map,start_x, start_y, scale_array)
+    {
+      var vertices = [], texCoords = [];
+      var character, map_info, triangles;
+      var x = start_x, y = start_y;
+      var padding = 0.5;
+
+      var font_map_width = font_map["width"];
+      var font_map_height = font_map["height"];
+      var total_width, total_height;
+
+      for (i = 0; i < text.length; i++) {
+          total_width = scale_array[i];
+          total_height = scale_array[i];
+          character = text[i];
+          // console.log("processing character " + character);
+          map_info = font_map["characters"][character];
+
+          // update vertices
+          triangles = [
+            x, y, 0.0,  // bottom left
+            x + map_info["width"] / total_width, y, 0.0,  // bottom right
+            x + map_info["width"] / total_width, y + (map_info["height"]) / total_height, 0.0, // top right
+
+            x, y, 0.0,  // bottom left
+            x + map_info["width"] / total_width, y + (map_info["height"]) / total_height, 0.0, // top right
+            x, y + (map_info["height"]) / total_height, 0.0// top left
+          ];
+          Array.prototype.push.apply(vertices, triangles);
+
+          // update textCoords
+          triangles = [
+            map_info["x"] / font_map_width, (font_map_height - map_info["y"] - map_info["height"]) / font_map_height,  // bottom left
+            (map_info["x"] + map_info["width"]) / font_map_width, (font_map_height - map_info["y"] - map_info["height"]) / font_map_height,  // bottom right
+            (map_info["x"] + map_info["width"]) / font_map_width, (font_map_height - map_info["y"]) / font_map_height,  // top right
+
+            map_info["x"] / font_map_width, (font_map_height - map_info["y"] - map_info["height"]) / font_map_height,  // bottom left
+            (map_info["x"] + map_info["width"]) / font_map_width, (font_map_height - map_info["y"]) / font_map_height, // top right
+            map_info["x"] / font_map_width, (font_map_height - map_info["y"]) / font_map_height, // top left
+          ];
+          Array.prototype.push.apply(texCoords, triangles);
+
+          x += (map_info["width"] + padding) /total_width; // + map_info["originX"]
+      }
+      //
+      // console.log(vertices);
+      // console.log(texCoords);
+      return [vertices, texCoords];
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      render();
+    }
+
+    function render() {
+      var time = performance.now()/100.0;
+      mesh1.material.uniforms.iGlobalTime.value = time;
+      mesh2.material.uniforms.iGlobalTime.value = time;
+      mesh3.material.uniforms.iGlobalTime.value = time;
+
+      frameCount += 1;
+
+      if (frameCount % 2 == 0) {
+        var scaleArray = []
+        for (i = 0; i < default_sentence.length; i++) {
+          scaleArray.push(default_scale / Math.abs(Math.sin(time / 50.0 - i * 0.1)))
+        }
+        var map1 = getTextMap(default_sentence, font_map_c, 0.0, 0.0, scaleArray); // window.innerWidth, window.innerHeight);
+
+        var vertices1 = new Float32Array(map1[0]);
+        mesh1.geometry.attributes.position = new THREE.BufferAttribute(vertices1, 3);
+
+
+        //
+        // var map2 = getTextMap(sentence, -1.44, 0, scaleArray); // window.innerWidth, window.innerHeight);
+        // var vertices2 = new Float32Array(map2[0]);
+        // mesh2.geometry.attributes.position = new THREE.BufferAttribute(vertices2, 3);
+        //
+        // var map3 = getTextMap(sentence, -1.44, -0.1, scaleArray); // window.innerWidth, window.innerHeight);
+        // var vertices3 = new Float32Array(map3[0]);
+        // mesh3.geometry.attributes.position = new THREE.BufferAttribute(vertices3, 3);
+
+      }
+      //mesh3.rotation.x += 0.02;
+      renderer.render(scene, camera);
+    }
+
+    function onDocumentMouseMove(event) {
+      event.preventDefault();
+      mouseX = (event.clientX / window.innerWidth);
+      mouseY = -(event.clientY / window.innerHeight);
+
+    }
+
+    function onWindowResize(event) {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  </script>
+</body>
+</html>
