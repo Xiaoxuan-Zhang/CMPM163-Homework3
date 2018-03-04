@@ -2,7 +2,7 @@
 
 A. SDF Fonts<br/><br/>
 [SDF Fonts](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/sdf_test.html)
-![](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/Screenshot3.png)<br/><br/>
+![](https://xiaoxuan-zhang.github.io/CMPM163-Homework3/Screenshot3.PNG)<br/><br/>
 
 B. Shadertoy-Style scene<br/><br/>
    
